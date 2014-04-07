@@ -6,6 +6,7 @@ import pymorphy
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 import os
+from collections import Counter
 
 morph = pymorphy.get_morph('C:/DB/ru.sqlite-json')
 stop_words = stopwords.words('russian')
@@ -55,13 +56,47 @@ for subdir, dirs, files in os.walk('poems'):
 tfidf = TfidfVectorizer(tokenizer=tokenizeMe, stop_words=None)
 tt = tfidf.fit_transform(corpus.values())
 
-test_file = open('test/1.txt', 'r')
+#test_file = open('test/1.txt', 'r')
 #test_file = open('poems/1.txt', 'r')
-text = test_file.read()
-response = tfidf.transform([text])
-print(response)
+#text = test_file.read()
+#response = tfidf.transform([text])
+#print(response)
+#
+#feature_names = tfidf.get_feature_names()
 
-feature_names = tfidf.get_feature_names()
-for col in response.nonzero()[1]:
-    print(feature_names[col])
-    print(feature_names[col], ' - ', response[0, col])
+TFVectors = []
+f = open('out/out.txt', 'w')
+for file, text in corpus.items():
+    response = tfidf.transform([text])
+    feature_names = tfidf.get_feature_names()
+
+    myDict = {}
+    for col in response.nonzero()[1]:
+        print(feature_names[col])
+        print(feature_names[col], ' - ', response[0, col])
+        myDict[feature_names[col]] = response[0, col]
+
+    #write result to out.txt
+
+    f.write(str(file)+':')
+
+    myDict = Counter(myDict).most_common()
+    #appending to features vector
+    TFVectors.append(myDict[:])
+    myDict = myDict[:10]
+    for word in myDict:
+        print(word[0])
+        print(word[1])
+        f.write( word[0].encode('utf-8') + '-' + str(word[1])+';')
+
+    f.write("\n")
+
+f.close()
+
+#merge all vectors in order to get full Space
+space = {}
+for v in TFVectors:
+    space.update(v)
+    print(len(v))
+
+print(len(space))
