@@ -8,10 +8,17 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import os
 from collections import Counter
 
+import numpy as np
+import cv2
+
+#corpus_dir = 'corpus_1836'
+corpus_dir = 'poems'
+CLUSTERS_COUNT = 2
 morph = pymorphy.get_morph('C:/DB/ru.sqlite-json')
 stop_words = stopwords.words('russian')
 stop_words.extend(['что', 'это', 'так', 'вот', 'быть', 'как'])
 corpus = {}
+res_txt = []
 
 def tokenizeMe(sentence):
     all_words = []
@@ -42,7 +49,7 @@ def tokenizeMe(sentence):
 
 
 #walk through files
-for subdir, dirs, files in os.walk('poems'):
+for subdir, dirs, files in os.walk(corpus_dir):
     for file in files:
         file_path = subdir + os.path.sep + file
         poem = open(file_path, 'r')
@@ -72,8 +79,8 @@ for file, text in corpus.items():
 
     myDict = {}
     for col in response.nonzero()[1]:
-        print(feature_names[col])
-        print(feature_names[col], ' - ', response[0, col])
+        #print(feature_names[col])
+        #print(feature_names[col], ' - ', response[0, col])
         myDict[feature_names[col]] = response[0, col]
 
     #write result to out.txt
@@ -83,10 +90,11 @@ for file, text in corpus.items():
     myDict = Counter(myDict).most_common()
     #appending to features vector
     TFVectors.append(myDict[:])
+    res_txt.append(file)
     myDict = myDict[:10]
     for word in myDict:
-        print(word[0])
-        print(word[1])
+        #print(word[0])
+        #print(word[1])
         f.write( word[0].encode('utf-8') + '-' + str(word[1])+';')
 
     f.write("\n")
@@ -98,5 +106,29 @@ space = {}
 for v in TFVectors:
     space.update(v)
     print(len(v))
+#set weights to zero in space
+space = dict.fromkeys(space, 0.0)
 
-print(len(space))
+space_length = len(space)
+print(space_length)
+
+#print(space[space.keys()[0]])
+
+list_vectors = []
+for v in TFVectors:
+    cp = space.copy()
+    cp.update(v)
+    cp = [value for (key, value) in sorted(cp.items())]
+    #cp = sorted(cp.items()).values()
+    list_vectors.append( cp[:] )
+
+
+#print(list_vectors[0][:50])
+
+list_vectors = np.float32(list_vectors)
+criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+ret,label,center = cv2.kmeans(list_vectors, CLUSTERS_COUNT, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
+res_bin = label.flatten()
+
+print(res_bin)
+print(res_txt)
