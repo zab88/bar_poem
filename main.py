@@ -11,8 +11,8 @@ from collections import Counter
 import numpy as np
 import cv2
 
-#corpus_dir = 'corpus_1836'
-corpus_dir = 'poems'
+corpus_dir = 'corpus_1836'
+#corpus_dir = 'poems'
 CLUSTERS_COUNT = 2
 morph = pymorphy.get_morph('C:/DB/ru.sqlite-json')
 stop_words = stopwords.words('russian')
